@@ -1,0 +1,7 @@
+Method,Dataset,Amount of Data,Speed (Training),Speed (Prediction),Accuracy,Precision,Recall,F1-Score
+Logistic Regression,Student Performance,"1674 train, 718 test",0.1378s,0.0020s,0.7465,0.7179,0.7465,0.7271
+Support Vector Machine (SVM),Student Performance,"1674 train, 718 test",0.0504s,0.0342s,0.7813,0.7897,0.7813,0.7667
+Decision Tree (DT),Student Performance,"1674 train, 718 test",0.0082s,0.0012s,0.8189,0.8244,0.8189,0.8203
+Random Forest,Student Performance,"1674 train, 718 test",0.1501s,0.0096s,0.9164,0.9153,0.9164,0.9132
+K-Nearest Neighbors (KNN),Student Performance,"1674 train, 718 test",0.0037s,0.0232s,0.6003,0.5863,0.6003,0.5918
+Naive Bayes,Student Performance,"1674 train, 718 test",0.0036s,0.0008s,0.4972,0.2476,0.4972,0.3306
