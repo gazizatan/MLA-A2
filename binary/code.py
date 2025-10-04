@@ -9,6 +9,20 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
+try:
+    import xgboost as xgb
+    XGBOOST_AVAILABLE = True
+except (ImportError, Exception) as e:
+    XGBOOST_AVAILABLE = False
+    print(f"Warning: XGBoost not available. Error: {e}")
+
+try:
+    import lightgbm as lgb
+    LIGHTGBM_AVAILABLE = True
+    print("Using custom LightGBM implementation")
+except (ImportError, Exception) as e:
+    LIGHTGBM_AVAILABLE = False
+    print(f"Warning: LightGBM not available. Error: {e}")
 import matplotlib.pyplot as plt
 from collections import Counter
 import time
@@ -35,12 +49,10 @@ plt.close()
 
 x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=random_state)
 
-# Standardize features for algorithms that benefit from scaling
 scaler = StandardScaler()
 x_train_scaled = scaler.fit_transform(x_train)
 x_test_scaled = scaler.transform(x_test)
 
-# Create all machine learning models
 lr = LogisticRegression(random_state=random_state, max_iter=1000)
 DT = DecisionTreeClassifier(criterion='gini', max_depth=3, random_state=random_state)
 SV = SVC(kernel='linear', C=1.0, random_state=random_state)
@@ -50,7 +62,17 @@ nb = GaussianNB()
 gb = GradientBoostingClassifier(n_estimators=100, random_state=random_state)
 mlp = MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=500, random_state=random_state)
 
-# Train all models
+# Create XGBoost and LightGBM models only if available
+if XGBOOST_AVAILABLE:
+    xgb_model = xgb.XGBClassifier(n_estimators=100, random_state=random_state, eval_metric='logloss')
+else:
+    xgb_model = None
+
+if LIGHTGBM_AVAILABLE:
+    lgb_model = lgb.LGBMClassifier(n_estimators=100, random_state=random_state, verbose=-1)
+else:
+    lgb_model = None
+
 lr.fit(x_train, y_train)
 DT.fit(x_train, y_train)
 SV.fit(x_train_scaled, y_train)  # SVM benefits from scaling
@@ -59,6 +81,13 @@ knn.fit(x_train_scaled, y_train)  # KNN benefits from scaling
 nb.fit(x_train, y_train)
 gb.fit(x_train, y_train)
 mlp.fit(x_train_scaled, y_train)  # Neural network benefits from scaling
+
+# Train XGBoost and LightGBM only if available
+if XGBOOST_AVAILABLE and xgb_model is not None:
+    xgb_model.fit(x_train, y_train)
+
+if LIGHTGBM_AVAILABLE and lgb_model is not None:
+    lgb_model.fit(x_train, y_train)
 
 def measure_training_time(model, X_train, y_train):
     start_time = time.time()
@@ -70,7 +99,6 @@ total_samples = len(df)
 train_samples = len(x_train)
 test_samples = len(x_test)
 
-# Measure training times for all models
 lr_time = measure_training_time(LogisticRegression(random_state=random_state, max_iter=1000), x_train, y_train)
 dt_time = measure_training_time(DecisionTreeClassifier(criterion='gini', max_depth=3, random_state=random_state), x_train, y_train)
 svm_time = measure_training_time(SVC(kernel='linear', C=1.0, random_state=random_state), x_train_scaled, y_train)
@@ -80,7 +108,17 @@ nb_time = measure_training_time(GaussianNB(), x_train, y_train)
 gb_time = measure_training_time(GradientBoostingClassifier(n_estimators=100, random_state=random_state), x_train, y_train)
 mlp_time = measure_training_time(MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=500, random_state=random_state), x_train_scaled, y_train)
 
-# Get accuracies for all models
+# Measure XGBoost and LightGBM training times only if available
+if XGBOOST_AVAILABLE:
+    xgb_time = measure_training_time(xgb.XGBClassifier(n_estimators=100, random_state=random_state, eval_metric='logloss'), x_train, y_train)
+else:
+    xgb_time = 0.0
+
+if LIGHTGBM_AVAILABLE:
+    lgb_time = measure_training_time(lgb.LGBMClassifier(n_estimators=100, random_state=random_state, verbose=-1), x_train, y_train)
+else:
+    lgb_time = 0.0
+
 lr_accuracy = lr.score(x_test, y_test)
 dt_accuracy = DT.score(x_test, y_test)
 svm_accuracy = SV.score(x_test_scaled, y_test)
@@ -90,39 +128,49 @@ nb_accuracy = nb.score(x_test, y_test)
 gb_accuracy = gb.score(x_test, y_test)
 mlp_accuracy = mlp.score(x_test_scaled, y_test)
 
+# Get XGBoost and LightGBM accuracies only if available
+if XGBOOST_AVAILABLE and xgb_model is not None:
+    xgb_accuracy = xgb_model.score(x_test, y_test)
+else:
+    xgb_accuracy = 0.0
+
+if LIGHTGBM_AVAILABLE and lgb_model is not None:
+    lgb_accuracy = lgb_model.score(x_test, y_test)
+else:
+    lgb_accuracy = 0.0
+
+# Build results data dynamically based on available models
+methods = [
+    'Logistic Regression', 
+    'Support Vector Machine (SVM)', 
+    'Decision Tree (DT)',
+    'Random Forest (RF)',
+    'K-Nearest Neighbors (KNN)',
+    'Naive Bayes (NB)',
+    'Gradient Boosting (GB)',
+    'Neural Network (MLP)'
+]
+
+speeds = [lr_time, svm_time, dt_time, rf_time, knn_time, nb_time, gb_time, mlp_time]
+accuracies = [lr_accuracy, svm_accuracy, dt_accuracy, rf_accuracy, knn_accuracy, nb_accuracy, gb_accuracy, mlp_accuracy]
+
+# Add XGBoost and LightGBM if available
+if XGBOOST_AVAILABLE:
+    methods.append('XGBoost (XGB)')
+    speeds.append(xgb_time)
+    accuracies.append(xgb_accuracy)
+
+if LIGHTGBM_AVAILABLE:
+    methods.append('LightGBM (LGB)')
+    speeds.append(lgb_time)
+    accuracies.append(lgb_accuracy)
+
 results_data = {
-    'Method': [
-        'Logistic Regression', 
-        'Support Vector Machine (SVM)', 
-        'Decision Tree (DT)',
-        'Random Forest (RF)',
-        'K-Nearest Neighbors (KNN)',
-        'Naive Bayes (NB)',
-        'Gradient Boosting (GB)',
-        'Neural Network (MLP)'
-    ],
-    'Dataset': ['Surgical-deepnet.csv'] * 8,
-    'Amount of Data': [f'{total_samples} samples'] * 8,
-    'Speed (seconds)': [
-        f'{lr_time:.4f}', 
-        f'{svm_time:.4f}', 
-        f'{dt_time:.4f}',
-        f'{rf_time:.4f}',
-        f'{knn_time:.4f}',
-        f'{nb_time:.4f}',
-        f'{gb_time:.4f}',
-        f'{mlp_time:.4f}'
-    ],
-    'Accuracy': [
-        f'{lr_accuracy:.4f}', 
-        f'{svm_accuracy:.4f}', 
-        f'{dt_accuracy:.4f}',
-        f'{rf_accuracy:.4f}',
-        f'{knn_accuracy:.4f}',
-        f'{nb_accuracy:.4f}',
-        f'{gb_accuracy:.4f}',
-        f'{mlp_accuracy:.4f}'
-    ]
+    'Method': methods,
+    'Dataset': ['Surgical-deepnet.csv'] * len(methods),
+    'Amount of Data': [f'{total_samples} samples'] * len(methods),
+    'Speed (seconds)': [f'{speed:.4f}' for speed in speeds],
+    'Accuracy': [f'{accuracy:.4f}' for accuracy in accuracies]
 }
 
 results_df = pd.DataFrame(results_data)
