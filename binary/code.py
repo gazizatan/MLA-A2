@@ -62,7 +62,7 @@ nb = GaussianNB()
 gb = GradientBoostingClassifier(n_estimators=100, random_state=random_state)
 mlp = MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=500, random_state=random_state)
 
-# Create XGBoost and LightGBM models only if available
+
 if XGBOOST_AVAILABLE:
     xgb_model = xgb.XGBClassifier(n_estimators=100, random_state=random_state, eval_metric='logloss')
 else:
@@ -75,14 +75,14 @@ else:
 
 lr.fit(x_train, y_train)
 DT.fit(x_train, y_train)
-SV.fit(x_train_scaled, y_train)  # SVM benefits from scaling
+SV.fit(x_train_scaled, y_train)
 rf.fit(x_train, y_train)
-knn.fit(x_train_scaled, y_train)  # KNN benefits from scaling
+knn.fit(x_train_scaled, y_train)
 nb.fit(x_train, y_train)
 gb.fit(x_train, y_train)
-mlp.fit(x_train_scaled, y_train)  # Neural network benefits from scaling
+mlp.fit(x_train_scaled, y_train)
 
-# Train XGBoost and LightGBM only if available
+
 if XGBOOST_AVAILABLE and xgb_model is not None:
     xgb_model.fit(x_train, y_train)
 
@@ -108,7 +108,7 @@ nb_time = measure_training_time(GaussianNB(), x_train, y_train)
 gb_time = measure_training_time(GradientBoostingClassifier(n_estimators=100, random_state=random_state), x_train, y_train)
 mlp_time = measure_training_time(MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=500, random_state=random_state), x_train_scaled, y_train)
 
-# Measure XGBoost and LightGBM training times only if available
+
 if XGBOOST_AVAILABLE:
     xgb_time = measure_training_time(xgb.XGBClassifier(n_estimators=100, random_state=random_state, eval_metric='logloss'), x_train, y_train)
 else:
@@ -128,7 +128,7 @@ nb_accuracy = nb.score(x_test, y_test)
 gb_accuracy = gb.score(x_test, y_test)
 mlp_accuracy = mlp.score(x_test_scaled, y_test)
 
-# Get XGBoost and LightGBM accuracies only if available
+
 if XGBOOST_AVAILABLE and xgb_model is not None:
     xgb_accuracy = xgb_model.score(x_test, y_test)
 else:
@@ -139,7 +139,7 @@ if LIGHTGBM_AVAILABLE and lgb_model is not None:
 else:
     lgb_accuracy = 0.0
 
-# Build results data dynamically based on available models
+
 methods = [
     'Logistic Regression', 
     'Support Vector Machine (SVM)', 
@@ -154,7 +154,7 @@ methods = [
 speeds = [lr_time, svm_time, dt_time, rf_time, knn_time, nb_time, gb_time, mlp_time]
 accuracies = [lr_accuracy, svm_accuracy, dt_accuracy, rf_accuracy, knn_accuracy, nb_accuracy, gb_accuracy, mlp_accuracy]
 
-# Add XGBoost and LightGBM if available
+
 if XGBOOST_AVAILABLE:
     methods.append('XGBoost (XGB)')
     speeds.append(xgb_time)

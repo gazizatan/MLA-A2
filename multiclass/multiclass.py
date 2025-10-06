@@ -66,7 +66,6 @@ classifiers = {
     'Naive Bayes': MultinomialNB()
 }
 
-# Add XGBoost and LightGBM if available
 if XGBOOST_AVAILABLE:
     classifiers['XGBoost'] = xgb.XGBClassifier(
         random_state=random_state,
@@ -86,7 +85,7 @@ if LIGHTGBM_AVAILABLE:
         learning_rate=0.1,
         subsample=0.8,
         colsample_bytree=0.8,
-        verbose=-1  # Suppress output
+    verbose=-1
     )
 
 results = []
@@ -110,7 +109,7 @@ for name, classifier in classifiers.items():
         y_pred = pipeline.predict(X_test)
         prediction_time = time.time() - start_time
     elif name in ['XGBoost', 'LightGBM']:
-        # Fit and predict directly for XGBoost and LightGBM
+
         start_time = time.time()
         classifier.fit(X_train, y_train)
         training_time = time.time() - start_time
